@@ -102,15 +102,18 @@ export class StoreScene extends Phaser.Scene {
     this.phaseReveal = document.getElementById('phase-reveal');
     this.phaseEmpty = document.getElementById('phase-empty');
     this.imageContainer = document.getElementById('image-container');
+    this.imagesRow = document.querySelector('.images-row');
+    this.splitter = document.getElementById('modal-splitter');
     this.modalImage = document.getElementById('modal-image');
     this.btnSubmit = document.getElementById('btn-submit');
     this.btnContinue = document.getElementById('btn-continue');
     this.btnEmptyClose = document.getElementById('btn-empty-close');
-    this.revealComparison = document.getElementById('reveal-comparison');
-    this.revealEvidence = document.getElementById('reveal-evidence');
+    this.revealUser = document.getElementById('reveal-user');
+    this.revealOurs = document.getElementById('reveal-ours');
     this.revealSummary = document.getElementById('reveal-summary');
 
     this.selectedHotspots = new Set();
+    this.individualSelections = new Set();
     this.userReasons = {};
     this.currentProductData = null;
     this.selectionGroups = [];
@@ -118,6 +121,7 @@ export class StoreScene extends Phaser.Scene {
     this.groupCounter = 0;
     this.hotspotGroupMap = {};
     this.reasoningArea = document.getElementById('reasoning-area');
+    this.inReveal = false;
 
     this._shiftUpHandler = (e) => {
       if (e.key === 'Shift' && this.modalOpen) this.finalizePendingGroup();
@@ -125,6 +129,7 @@ export class StoreScene extends Phaser.Scene {
     window.addEventListener('keyup', this._shiftUpHandler);
 
     this.setupZoom();
+    this.setupSplitter();
 
     this.modalCloseBtn.addEventListener('click', () => this.closeModal());
     this.btnSubmit.addEventListener('click', () => this.submitSelections());
@@ -187,11 +192,54 @@ export class StoreScene extends Phaser.Scene {
     });
   }
 
+  setupSplitter() {
+    if (!this.splitter || !this.imagesRow) return;
+
+    let dragging = false;
+    let startY = 0;
+    let startHeight = 0;
+
+    const minHeight = 140;
+
+    const onMouseMove = (e) => {
+      if (!dragging) return;
+      const dy = e.clientY - startY;
+      let newH = startHeight + dy;
+      const maxH = this.imagesRowNaturalHeight ?? 999;
+      if (newH < minHeight) newH = minHeight;
+      if (newH >= maxH) {
+        this.imagesRow.style.height = '';
+      } else {
+        this.imagesRow.style.height = `${newH}px`;
+      }
+    };
+
+    const onMouseUp = () => {
+      if (!dragging) return;
+      dragging = false;
+      document.body.style.cursor = '';
+    };
+
+    this.splitter.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      dragging = true;
+      startY = e.clientY;
+      startHeight = this.imagesRow.getBoundingClientRect().height;
+      if (!this.imagesRow.style.height) this.imagesRowNaturalHeight = startHeight;
+      document.body.style.cursor = 'row-resize';
+    });
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }
+
   openModal(productData, sprite) {
     this.modalOpen = true;
+    this.inReveal = false;
     this.currentProductSprite = sprite;
     this.currentProductData = productData;
     this.selectedHotspots.clear();
+    this.individualSelections.clear();
     this.userReasons = {};
     this.selectionGroups = [];
     this.pendingGroup = [];
@@ -216,8 +264,14 @@ export class StoreScene extends Phaser.Scene {
     this.modalImage.src = productData.images.front;
     this.buildHotspots(hs.front);
     this.buildExtraImages(productData.images, hs);
+    this.imagesRow.style.height = '';
+    this.splitter.classList.add('hidden');
     this.phaseSelect.classList.remove('hidden');
     this.modalEl.classList.remove('hidden');
+
+    this.time.delayedCall(50, () => {
+      if (this.imagesRow) this.imagesRowNaturalHeight = this.imagesRow.getBoundingClientRect().height;
+    });
   }
 
   buildExtraImages(images, hs) {
@@ -323,11 +377,13 @@ export class StoreScene extends Phaser.Scene {
       div.style.height = h.height + '%';
 
       div.addEventListener('click', (e) => {
+        if (this.inReveal) return;
         e.stopPropagation();
         this.handleHotspotClick(h.id, globalIdx, e);
       });
 
       div.addEventListener('mouseenter', () => {
+        if (this.inReveal) return;
         const ln = svg.querySelector(`.leader-line[data-index="${globalIdx}"]`);
         const nm = svg.querySelector(`.leader-number[data-index="${globalIdx}"]`);
         if (ln) ln.classList.add('hovered');
@@ -335,6 +391,7 @@ export class StoreScene extends Phaser.Scene {
       });
 
       div.addEventListener('mouseleave', () => {
+        if (this.inReveal) return;
         const ln = svg.querySelector(`.leader-line[data-index="${globalIdx}"]`);
         const nm = svg.querySelector(`.leader-number[data-index="${globalIdx}"]`);
         if (ln) ln.classList.remove('hovered');
@@ -415,6 +472,7 @@ export class StoreScene extends Phaser.Scene {
       g.appendChild(text);
 
       g.addEventListener('click', (e) => {
+        if (this.inReveal) return;
         e.stopPropagation();
         this.handleHotspotClick(h.id, globalIdx, e);
       });
@@ -456,11 +514,13 @@ export class StoreScene extends Phaser.Scene {
       div.style.height = hs.height + '%';
 
       div.addEventListener('click', (e) => {
+        if (this.inReveal) return;
         e.stopPropagation();
         this.handleHotspotClick(hs.id, index, e);
       });
 
       div.addEventListener('mouseenter', () => {
+        if (this.inReveal) return;
         const ln = svg.querySelector(`.leader-line[data-index="${index}"]`);
         const nm = svg.querySelector(`.leader-number[data-index="${index}"]`);
         if (ln) ln.classList.add('hovered');
@@ -468,6 +528,7 @@ export class StoreScene extends Phaser.Scene {
       });
 
       div.addEventListener('mouseleave', () => {
+        if (this.inReveal) return;
         const ln = svg.querySelector(`.leader-line[data-index="${index}"]`);
         const nm = svg.querySelector(`.leader-number[data-index="${index}"]`);
         if (ln) ln.classList.remove('hovered');
@@ -555,6 +616,7 @@ export class StoreScene extends Phaser.Scene {
       g.appendChild(text);
 
       g.addEventListener('click', (e) => {
+        if (this.inReveal) return;
         e.stopPropagation();
         this.handleHotspotClick(hs.id, index, e);
       });
@@ -578,13 +640,11 @@ export class StoreScene extends Phaser.Scene {
     const pendingIdx = this.pendingGroup.indexOf(id);
     if (pendingIdx >= 0) {
       this.pendingGroup.splice(pendingIdx, 1);
-      this.setHotspotVisualState(id, globalIdx, 'none');
-      this.selectedHotspots.delete(id);
+      if (!this.individualSelections.has(id)) {
+        this.selectedHotspots.delete(id);
+      }
+      this.updateHotspotVisual(id, globalIdx);
       return;
-    }
-
-    if (this.selectedHotspots.has(id) && !this.hotspotGroupMap[id]) {
-      this.removeReasoningInput(id);
     }
 
     if (this.hotspotGroupMap[id]) {
@@ -593,60 +653,66 @@ export class StoreScene extends Phaser.Scene {
 
     this.pendingGroup.push(id);
     this.selectedHotspots.add(id);
-    this.setHotspotVisualState(id, globalIdx, 'grouping');
+    this.updateHotspotVisual(id, globalIdx);
   }
 
   handleIndividualClick(id, globalIdx) {
-    if (this.hotspotGroupMap[id]) {
-      this.removeFromGroup(id);
-      this.setHotspotVisualState(id, globalIdx, 'none');
-      this.selectedHotspots.delete(id);
-      return;
-    }
-
-    const isSelected = this.selectedHotspots.has(id);
-    if (isSelected) {
-      this.selectedHotspots.delete(id);
+    const isIndividual = this.individualSelections.has(id);
+    if (isIndividual) {
+      this.individualSelections.delete(id);
       this.removeReasoningInput(id);
-      this.setHotspotVisualState(id, globalIdx, 'none');
+      if (!this.hotspotGroupMap[id] && !this.pendingGroup.includes(id)) {
+        this.selectedHotspots.delete(id);
+      }
     } else {
+      this.individualSelections.add(id);
       this.selectedHotspots.add(id);
       this.addReasoningInput(id, globalIdx);
-      this.setHotspotVisualState(id, globalIdx, 'selected');
     }
+    this.updateHotspotVisual(id, globalIdx);
   }
 
   finalizePendingGroup() {
     if (this.pendingGroup.length === 0) return;
 
-    if (this.pendingGroup.length === 1) {
-      const id = this.pendingGroup[0];
+    const pending = [...this.pendingGroup];
+    this.pendingGroup = [];
+
+    if (pending.length === 1) {
+      const id = pending[0];
       const gi = this.allHotspotRefs.findIndex(r => r.id === id);
-      this.setHotspotVisualState(id, gi, 'selected');
-      this.addReasoningInput(id, gi);
+      if (!this.individualSelections.has(id)) {
+        this.individualSelections.add(id);
+        this.addReasoningInput(id, gi);
+      }
+      this.updateHotspotVisual(id, gi);
     } else {
       const groupKey = `group-${this.groupCounter++}`;
-      const group = { ids: [...this.pendingGroup], key: groupKey };
+      const group = { ids: [...pending], key: groupKey };
       this.selectionGroups.push(group);
 
       for (const gid of group.ids) {
         this.hotspotGroupMap[gid] = groupKey;
         const gi = this.allHotspotRefs.findIndex(r => r.id === gid);
-        this.setHotspotVisualState(gid, gi, 'grouped');
+        this.updateHotspotVisual(gid, gi);
       }
 
       this.addGroupReasoningInput(group);
     }
-
-    this.pendingGroup = [];
   }
 
-  setHotspotVisualState(id, globalIdx, state) {
+  updateHotspotVisual(id, globalIdx) {
     const ref = this.allHotspotRefs[globalIdx];
     if (!ref) return;
 
+    const isIndividual = this.individualSelections.has(id);
+    const isGrouped = !!this.hotspotGroupMap[id];
+    const isPending = this.pendingGroup.includes(id);
+
     ref.el.classList.remove('selected', 'grouping', 'grouped');
-    if (state !== 'none') ref.el.classList.add(state);
+    if (isPending) ref.el.classList.add('grouping');
+    if (isGrouped) ref.el.classList.add('grouped');
+    if (isIndividual) ref.el.classList.add('selected');
 
     const svg = ref.container.querySelector('.leader-overlay');
     if (!svg) return;
@@ -654,13 +720,12 @@ export class StoreScene extends Phaser.Scene {
     const line = svg.querySelector(`.leader-line[data-index="${globalIdx}"]`);
     const numG = svg.querySelector(`.leader-number[data-index="${globalIdx}"]`);
 
-    if (line) {
-      line.classList.remove('selected', 'grouping', 'grouped');
-      if (state !== 'none') line.classList.add(state);
-    }
-    if (numG) {
-      numG.classList.remove('selected', 'grouping', 'grouped');
-      if (state !== 'none') numG.classList.add(state);
+    for (const el of [line, numG]) {
+      if (!el) continue;
+      el.classList.remove('selected', 'grouping', 'grouped');
+      if (isPending) el.classList.add('grouping');
+      if (isGrouped) el.classList.add('grouped');
+      if (isIndividual) el.classList.add('selected');
     }
   }
 
@@ -675,6 +740,10 @@ export class StoreScene extends Phaser.Scene {
     group.ids = group.ids.filter(gid => gid !== id);
     delete this.hotspotGroupMap[id];
 
+    if (!this.individualSelections.has(id)) {
+      this.selectedHotspots.delete(id);
+    }
+
     const savedReason = this.userReasons[groupKey];
     this.removeReasoningInput(groupKey);
 
@@ -683,14 +752,21 @@ export class StoreScene extends Phaser.Scene {
         const remainId = group.ids[0];
         delete this.hotspotGroupMap[remainId];
         const ri = this.allHotspotRefs.findIndex(r => r.id === remainId);
-        this.setHotspotVisualState(remainId, ri, 'selected');
-        this.addReasoningInput(remainId, ri);
+        if (!this.individualSelections.has(remainId)) {
+          this.individualSelections.add(remainId);
+          this.selectedHotspots.add(remainId);
+          this.addReasoningInput(remainId, ri);
+        }
+        this.updateHotspotVisual(remainId, ri);
       }
       this.selectionGroups.splice(groupIdx, 1);
     } else {
       this.userReasons[groupKey] = savedReason;
       this.addGroupReasoningInput(group);
     }
+
+    const gi = this.allHotspotRefs.findIndex(r => r.id === id);
+    this.updateHotspotVisual(id, gi);
   }
 
   addGroupReasoningInput(group) {
@@ -734,9 +810,13 @@ export class StoreScene extends Phaser.Scene {
   }
 
   getUserReason(id) {
+    const parts = [];
+    if (this.userReasons[id]) parts.push(this.userReasons[id]);
     const groupKey = this.hotspotGroupMap[id];
-    if (groupKey) return this.userReasons[groupKey] || '';
-    return this.userReasons[id] || '';
+    if (groupKey && this.userReasons[groupKey]) {
+      parts.push(`[Group] ${this.userReasons[groupKey]}`);
+    }
+    return parts.join(' — ');
   }
 
   addReasoningInput(id, index) {
@@ -783,25 +863,14 @@ export class StoreScene extends Phaser.Scene {
     const data = this.currentProductData;
     if (!data) return;
 
-    let html = '';
+    this.inReveal = true;
 
-    const picks = [...this.selectedHotspots];
-    if (picks.length > 0) {
-      html += '<div class="reveal-section-title">Your selections</div>';
-      picks.forEach(id => {
-        const userReason = this.getUserReason(id);
-        html += `<div class="reveal-item">
-          <strong>${this.formatId(id)}</strong>
-          ${userReason ? `<p class="user-reason"><em>You said:</em> "${userReason}"</p>` : ''}
-        </div>`;
-      });
-    } else {
-      html += '<p style="color:#636e72;text-align:center;">You didn\'t select any areas. Try again next time!</p>';
-    }
+    // Disable direct hotspot interaction but keep zoom/pan
+    this.imageContainer.classList.add('in-reveal');
+    document.querySelectorAll('.extra-img-wrapper').forEach(w => w.classList.add('in-reveal'));
 
-    this.revealComparison.innerHTML = html;
-
-    this.revealEvidence.innerHTML = '';
+    this.buildRevealUser(data);
+    this.buildRevealOurs(data);
 
     if (data.summary) {
       this.revealSummary.innerHTML = data.summary;
@@ -812,6 +881,141 @@ export class StoreScene extends Phaser.Scene {
 
     this.phaseSelect.classList.add('hidden');
     this.phaseReveal.classList.remove('hidden');
+
+    this.time.delayedCall(50, () => {
+      const body = this.phaseReveal;
+      const hasOverflow = body && body.scrollHeight > body.clientHeight;
+      if (this.splitter) this.splitter.classList.toggle('hidden', !hasOverflow);
+    });
+  }
+
+  buildRevealUser(data) {
+    this.revealUser.innerHTML = '';
+
+    const entries = [];
+
+    for (const id of this.individualSelections) {
+      const globalIdx = this.allHotspotRefs.findIndex(r => r.id === id);
+      const num = globalIdx + 1;
+      const reason = this.userReasons[id] || '';
+      entries.push({ nums: [num], reason, sortKey: num });
+    }
+
+    for (const group of this.selectionGroups) {
+      const nums = group.ids.map(gid => {
+        const gi = this.allHotspotRefs.findIndex(r => r.id === gid);
+        return gi + 1;
+      }).sort((a, b) => a - b);
+      const reason = this.userReasons[group.key] || '';
+      entries.push({ nums, reason, sortKey: Math.min(...nums), isGroup: true });
+    }
+
+    entries.sort((a, b) => a.sortKey - b.sortKey);
+
+    if (entries.length === 0) {
+      this.revealUser.innerHTML = '<p class="reveal-empty">You didn\'t select any areas — no worries, take a look at what we found.</p>';
+      return;
+    }
+
+    entries.forEach(entry => {
+      const el = document.createElement('div');
+      el.className = 'reveal-entry';
+      el.dataset.nums = entry.nums.join(',');
+
+      const label = document.createElement('span');
+      label.className = 'reveal-entry-label' + (entry.isGroup ? ' group' : '');
+      label.textContent = entry.nums.join('+');
+
+      const text = document.createElement('div');
+      text.className = 'reveal-entry-text';
+      if (entry.reason) {
+        text.innerHTML = `<p>${entry.reason}</p>`;
+      } else {
+        text.innerHTML = '<p class="no-reason">No reasoning provided</p>';
+      }
+
+      el.appendChild(label);
+      el.appendChild(text);
+
+      el.addEventListener('mouseenter', () => this.highlightRevealHotspots(entry.nums, true));
+      el.addEventListener('mouseleave', () => this.highlightRevealHotspots(entry.nums, false));
+
+      this.revealUser.appendChild(el);
+    });
+  }
+
+  buildRevealOurs(data) {
+    this.revealOurs.innerHTML = '';
+
+    const entries = [];
+
+    const individualPicks = new Set(data.ourPicks || []);
+    const ourGroups = data.ourGroups || [];
+    const groupedNums = new Set();
+    ourGroups.forEach(g => g.ids.forEach(n => groupedNums.add(n)));
+
+    for (const num of individualPicks) {
+      const explanation = data.explanations?.[num] || '';
+      if (!explanation) continue;
+      const citation = data.citations?.[num] || '';
+      entries.push({ nums: [num], explanation, citation, sortKey: num });
+    }
+
+    for (const group of ourGroups) {
+      const nums = [...group.ids].sort((a, b) => a - b);
+      entries.push({ nums, explanation: group.explanation, sortKey: Math.min(...nums), isGroup: true });
+    }
+
+    entries.sort((a, b) => a.sortKey - b.sortKey);
+
+    if (entries.length === 0) {
+      this.revealOurs.innerHTML = '<p class="reveal-empty">No annotations for this product yet.</p>';
+      return;
+    }
+
+    entries.forEach(entry => {
+      const el = document.createElement('div');
+      el.className = 'reveal-entry';
+      el.dataset.nums = entry.nums.join(',');
+
+      const label = document.createElement('span');
+      label.className = 'reveal-entry-label' + (entry.isGroup ? ' group' : '');
+      label.textContent = entry.nums.join('+');
+
+      const text = document.createElement('div');
+      text.className = 'reveal-entry-text';
+      let html = `<p>${entry.explanation}</p>`;
+      if (entry.citation) {
+        html += `<a class="reveal-citation" href="${entry.citation}" target="_blank" rel="noopener">View source ↗</a>`;
+      }
+      text.innerHTML = html;
+
+      el.appendChild(label);
+      el.appendChild(text);
+
+      el.addEventListener('mouseenter', () => this.highlightRevealHotspots(entry.nums, true));
+      el.addEventListener('mouseleave', () => this.highlightRevealHotspots(entry.nums, false));
+
+      this.revealOurs.appendChild(el);
+    });
+  }
+
+  highlightRevealHotspots(nums, on) {
+    nums.forEach(n => {
+      const idx = n - 1;
+      const ref = this.allHotspotRefs[idx];
+      if (!ref) return;
+
+      ref.el.classList.toggle('hovered', on);
+
+      const svg = ref.container.querySelector('.leader-overlay');
+      if (svg) {
+        const line = svg.querySelector(`.leader-line[data-index="${idx}"]`);
+        const numG = svg.querySelector(`.leader-number[data-index="${idx}"]`);
+        if (line) line.classList.toggle('hovered', on);
+        if (numG) numG.classList.toggle('hovered', on);
+      }
+    });
   }
 
   formatId(id) {
@@ -821,6 +1025,7 @@ export class StoreScene extends Phaser.Scene {
   closeModal() {
     this.modalEl.classList.add('hidden');
     this.modalOpen = false;
+    this.inReveal = false;
     this.modalCooldown = true;
 
     if (this.currentProductSprite) {
@@ -830,10 +1035,16 @@ export class StoreScene extends Phaser.Scene {
     }
     this.currentProductData = null;
     this.allHotspotRefs = [];
+    this.individualSelections.clear();
     this.selectionGroups = [];
     this.pendingGroup = [];
     this.hotspotGroupMap = {};
     document.getElementById('extra-images').innerHTML = '';
+    this.imageContainer.classList.remove('in-reveal');
+    document.querySelectorAll('.extra-img-wrapper').forEach(w => w.classList.remove('in-reveal'));
+    this.revealUser.innerHTML = '';
+    this.revealOurs.innerHTML = '';
+    if (this.imagesRow) this.imagesRow.style.height = '';
 
     this.time.delayedCall(800, () => {
       this.modalCooldown = false;
