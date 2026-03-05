@@ -227,6 +227,27 @@
         "top": 59.8,
         "width": 14.1,
         "height": 17.5
+      },
+      {
+        "id": "contains",
+        "left": 73.2,
+        "top": 49.9,
+        "width": 14.4,
+        "height": 10.1
+      },
+      {
+        "id": "get-in-touch",
+        "left": 14.9,
+        "top": 77.6,
+        "width": 24.9,
+        "height": 8.8
+      },
+      {
+        "id": "gluten-free",
+        "left": 74.3,
+        "top": 77.3,
+        "width": 10.6,
+        "height": 8.9
       }
     ],
     "nutrition": []
