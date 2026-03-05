@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitaminwater Modal — Preserved Snapshot</title>
+  <style>
+    /* ─── VITAMINWATER MODAL — FROZEN SNAPSHOT — DO NOT EDIT ─── */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #1a1a2e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(4px);
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.hidden { display: none; }
+    .hidden { display: none; }
+
+    .modal-content {
+      background: #ffffff;
+      border-radius: 16px;
+      width: 94%;
+      max-width: 1400px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      animation: modal-enter 0.3s ease;
+    }
+    @keyframes modal-enter {
+      from { opacity: 0; transform: translateY(30px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid #e8e8e8;
+    }
+    .modal-header h2 { font-size: 1.3rem; color: #2d3436; font-weight: 700; }
+    .modal-close-btn {
+      background: none; border: none; font-size: 1.8rem;
+      cursor: pointer; color: #999; line-height: 1; transition: color 0.2s;
+    }
+    .modal-close-btn:hover { color: #333; }
+
+    .modal-body {
+      padding: 16px 24px 24px;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      margin-top: 8px;
+    }
+    .modal-body.hidden { display: none; }
+    .modal-instructions { text-align: center; color: #636e72; font-size: 0.95rem; margin-bottom: 16px; }
+    .modal-footer { padding: 16px 0 4px; display: flex; justify-content: center; }
+    .btn {
+      padding: 12px 32px; border: none; border-radius: 8px;
+      font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+    }
+    .btn-submit { background: #00b894; color: white; }
+    .btn-submit:hover { background: #00a381; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 184, 148, 0.4); }
+
+    .images-row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+      flex-shrink: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      padding: 0 10px;
+      margin-top: 8px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .modal-splitter {
+      height: 6px; margin: 0 10px 4px; border-radius: 3px;
+      background: linear-gradient(to right, #eceff1, #dfe6e9);
+      cursor: row-resize; flex-shrink: 0;
+    }
+    .modal-splitter.hidden { display: none; }
+
+    .extra-images { display: flex; gap: 10px; flex: 2; min-width: 0; }
+    .extra-img-wrapper {
+      position: relative; flex: 1; min-width: 0; overflow: hidden;
+      border-radius: 6px; border: 1px solid #dee2e6; cursor: default;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .extra-img-wrapper.zoomed { cursor: grab; }
+    .extra-img-wrapper.zoomed:active { cursor: grabbing; }
+    .extra-img-wrapper.in-reveal .hotspot { pointer-events: none; }
+    .extra-zoom-inner {
+      position: relative; flex-shrink: 0; max-width: 100%; max-height: 100%;
+      transition: transform 0.3s ease; transform-origin: center center;
+    }
+    .extra-zoom-inner img {
+      width: 100%; height: auto; max-height: min(380px, 50vh);
+      display: block; object-fit: contain; vertical-align: bottom;
+      -webkit-user-drag: none; pointer-events: none;
+    }
+    .extra-zoom-inner .hotspot {
+      position: absolute;
+      border: 2px dashed rgba(80, 80, 80, 0.7);
+      border-radius: 4px;
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .extra-zoom-inner .hotspot.selected { background: rgba(231, 76, 60, 0.2); border-color: #e74c3c; border-style: solid; }
+    .extra-zoom-inner .hotspot.grouping { background: rgba(142, 68, 173, 0.2); border: 2px dashed #8e44ad; animation: group-pulse 1s ease infinite; }
+    .extra-zoom-inner .hotspot.grouped { background: rgba(142, 68, 173, 0.25); border: 2px solid #8e44ad; }
+    .extra-zoom-inner .hotspot:hover,
+    .extra-zoom-inner .hotspot.hovered,
+    .extra-zoom-inner .hotspot.selected.hovered,
+    .extra-zoom-inner .hotspot.grouped.hovered,
+    .extra-zoom-inner .hotspot.selected.grouped.hovered {
+      background: rgba(200, 170, 0, 0.25);
+      border-color: rgba(180, 150, 0, 0.9);
+    }
+    .extra-zoom-inner .hotspot.selected.grouped {
+      background: linear-gradient(135deg, rgba(231, 76, 60, 0.25) 50%, rgba(142, 68, 173, 0.25) 50%);
+      border: 2px solid;
+      border-image: linear-gradient(135deg, #e74c3c 50%, #8e44ad 50%) 1;
+    }
+    .extra-zoom-inner .leader-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 2;
+    }
+    .extra-zoom-inner .leader-line { stroke: rgba(80, 80, 80, 0.7); }
+    .extra-zoom-inner .leader-line.hovered { stroke: rgba(180, 150, 0, 0.9); }
+    .extra-zoom-inner .leader-number circle { fill: transparent; stroke: rgba(80, 80, 80, 0.7); }
+    .extra-zoom-inner .leader-number text { fill: rgba(60, 60, 60, 0.85); }
+    .extra-zoom-inner .leader-number.hovered circle { stroke: rgba(180, 150, 0, 0.9); }
+    .extra-zoom-inner .leader-number.hovered text { fill: rgba(150, 120, 0, 1); }
+    .extra-zoom-inner .leader-line.grouping,
+    .extra-zoom-inner .leader-line.grouped { stroke: #8e44ad; }
+    .extra-zoom-inner .leader-number.grouping circle,
+    .extra-zoom-inner .leader-number.grouped circle { fill: rgba(142, 68, 173, 0.45); stroke: #8e44ad; }
+    .extra-zoom-inner .leader-number.grouping text,
+    .extra-zoom-inner .leader-number.grouped text { fill: #fff; }
+
+    .reasoning-area { margin-top: 16px; }
+    .reasoning-entry { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; animation: reason-in 0.25s ease; }
+    @keyframes reason-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .reasoning-entry .reason-label {
+      flex-shrink: 0; width: 48px; height: 28px; border-radius: 14px;
+      background: rgba(231, 76, 60, 0.15); border: 2px solid #e74c3c;
+      color: #e74c3c; font-size: 0.75rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; margin-top: 4px;
+    }
+    .reasoning-entry textarea {
+      flex: 1; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px;
+      padding: 8px 10px; font-family: 'Segoe UI', sans-serif; font-size: 0.85rem;
+      color: #2d3436; resize: vertical; min-height: 36px; max-height: 120px; transition: border-color 0.2s;
+    }
+    .reasoning-entry textarea:focus { outline: none; border-color: #e74c3c; }
+    .reasoning-entry textarea::placeholder { color: #b2bec3; }
+    .reasoning-entry.group-entry .reason-label {
+      width: 48px; height: 28px; padding: 0 4px; border-radius: 14px;
+      background: rgba(142, 68, 173, 0.15); border-color: #8e44ad; color: #8e44ad; font-size: 0.7rem; white-space: nowrap;
+    }
+    .reasoning-entry.group-entry textarea:focus { border-color: #8e44ad; }
+
+    .zoom-hint { text-align: center; color: #b2bec3; font-size: 0.8rem; margin-bottom: 8px; font-style: italic; }
+    .image-container {
+      position: relative; flex: 1; min-width: 0; overflow: hidden;
+      border-radius: 8px; cursor: default;
+    }
+    .image-container.zoomed { cursor: grab; }
+    .image-container.zoomed:active { cursor: grabbing; }
+    .image-container.in-reveal .hotspot { pointer-events: none; }
+    .zoom-inner {
+      position: relative;
+      transition: transform 0.3s ease;
+      transform-origin: center center;
+      overflow: hidden;
+    }
+    .image-container img {
+      width: 100%; height: auto; display: block;
+      -webkit-user-drag: none; pointer-events: none;
+    }
+    .hotspot {
+      position: absolute;
+      border: 2px dashed rgba(255, 255, 255, 0.5);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: transparent;
+    }
+    .hotspot.selected { background: rgba(231, 76, 60, 0.3); border: 2px solid #e74c3c; box-shadow: 0 0 8px rgba(231, 76, 60, 0.4); }
+    .hotspot.reveal-highlight { box-shadow: 0 0 10px rgba(255, 220, 0, 0.8); }
+    .hotspot.grouping { background: rgba(142, 68, 173, 0.2); border: 2px dashed #8e44ad; animation: group-pulse 1s ease infinite; }
+    .hotspot.grouped { background: rgba(142, 68, 173, 0.25); border: 2px solid #8e44ad; box-shadow: 0 0 8px rgba(142, 68, 173, 0.4); }
+    .hotspot.selected.grouped {
+      background: linear-gradient(135deg, rgba(231, 76, 60, 0.25) 50%, rgba(142, 68, 173, 0.25) 50%);
+      border: 2px solid;
+      border-image: linear-gradient(135deg, #e74c3c 50%, #8e44ad 50%) 1;
+      box-shadow: 0 0 6px rgba(231, 76, 60, 0.4), 0 0 12px rgba(142, 68, 173, 0.4);
+    }
+    .hotspot:hover,
+    .hotspot.hovered,
+    .hotspot.selected.hovered,
+    .hotspot.grouped.hovered,
+    .hotspot.selected.grouped.hovered {
+      background: rgba(255, 255, 0, 0.15);
+      border-color: rgba(255, 255, 0, 0.7);
+    }
+    @keyframes group-pulse {
+      0%, 100% { border-color: #8e44ad; background: rgba(142, 68, 173, 0.15); }
+      50% { border-color: #9b59b6; background: rgba(142, 68, 173, 0.35); }
+    }
+    .leader-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; overflow: visible; z-index: 40;
+    }
+    .leader-line { stroke: rgba(255, 255, 255, 0.5); stroke-width: 1.5; stroke-dasharray: 4 3; transition: stroke 0.2s ease; }
+    .leader-line.hovered { stroke: rgba(255, 255, 0, 0.7); }
+    .leader-line.selected { stroke: #e74c3c; }
+    .leader-line.reveal-highlight { stroke: rgba(255, 220, 0, 0.95); }
+    .leader-line.selected.grouped,
+    .leader-line.grouping,
+    .leader-line.grouped { stroke: #8e44ad; }
+    .leader-number { pointer-events: auto; cursor: pointer; transition: all 0.2s ease; }
+    .leader-number circle { fill: transparent; stroke: rgba(255, 255, 255, 0.5); stroke-width: 1.5; stroke-dasharray: 4 3; transition: all 0.2s ease; }
+    .leader-number text { fill: rgba(255, 255, 255, 0.7); font-size: 3px; font-weight: 700; font-family: 'Segoe UI', sans-serif; text-anchor: middle; dominant-baseline: central; transition: fill 0.2s ease; }
+    .leader-number.hovered circle { stroke: rgba(255, 255, 0, 0.7); }
+    .leader-number.hovered text { fill: rgba(255, 255, 0, 0.9); }
+    .leader-number.selected circle { fill: rgba(231, 76, 60, 0.5); stroke: #e74c3c; stroke-dasharray: none; }
+    .leader-number.selected text { fill: #fff; }
+    .leader-number.reveal-highlight circle { stroke: rgba(255, 220, 0, 0.95); }
+    .leader-number.reveal-highlight text { fill: rgba(255, 220, 0, 1); }
+    .leader-number.grouping circle { fill: rgba(142, 68, 173, 0.4); stroke: #8e44ad; stroke-dasharray: none; }
+    .leader-number.grouping text { fill: #fff; }
+    .leader-number.grouped circle { fill: rgba(142, 68, 173, 0.5); stroke: #8e44ad; stroke-dasharray: none; }
+    .leader-number.grouped text { fill: #fff; }
+    .leader-line.hovered { stroke: rgba(255, 255, 0, 0.9); }
+    .leader-number.hovered circle { fill: rgba(255, 255, 0, 0.5); stroke: rgba(255, 255, 0, 0.9); }
+    .leader-number.hovered text { fill: rgba(255, 255, 0, 1); }
+    .leader-number.selected.grouped circle { fill: rgba(142, 68, 173, 0.4); stroke: #e74c3c; stroke-dasharray: none; }
+    .leader-number.selected.grouped text { fill: #fff; }
+
+    .reveal-columns { display: flex; gap: 16px; margin-top: 16px; }
+    .reveal-col { flex: 1; min-width: 0; }
+    .reveal-col-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px; margin-bottom: 10px; border-bottom: 2px solid #e8e8e8; }
+    .reveal-col-title.user-title { color: #e74c3c; border-color: #e74c3c; }
+    .reveal-col-title.our-title { color: #0984e3; border-color: #0984e3; }
+    .reveal-entry { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; margin-bottom: 8px; border-radius: 8px; background: #f8f9fa; border: 1px solid #eee; cursor: default; transition: background 0.2s ease, border-color 0.2s ease; }
+    .reveal-entry:hover { background: #fffde7; border-color: #f0e68c; }
+    .reveal-entry-label { flex-shrink: 0; width: 48px; height: 28px; border-radius: 14px; background: rgba(231, 76, 60, 0.12); border: 2px solid #e74c3c; color: #e74c3c; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .reveal-col:last-child .reveal-entry-label { background: rgba(9, 132, 227, 0.1); border-color: #0984e3; color: #0984e3; }
+    .reveal-entry-label.group { width: 48px; min-width: 48px; padding: 0 4px; font-size: 0.7rem; background: rgba(142, 68, 173, 0.12); border-color: #8e44ad; color: #8e44ad; }
+    .reveal-col:last-child .reveal-entry-label.group { background: rgba(9, 132, 227, 0.08); border-color: #0984e3; color: #0984e3; }
+    .reveal-entry-text { flex: 1; min-width: 0; }
+    .reveal-entry-text p { color: #2d3436; font-size: 0.85rem; line-height: 1.5; margin: 0; }
+    .reveal-entry-text .no-reason { color: #b2bec3; font-style: italic; }
+    .reveal-citation { display: inline-block; margin-top: 6px; font-size: 0.78rem; color: #0984e3; text-decoration: none; font-weight: 600; }
+    .reveal-citation:hover { text-decoration: underline; }
+    .reveal-empty { color: #636e72; font-size: 0.85rem; text-align: center; padding: 16px 0; font-style: italic; }
+    .reveal-summary { background: #fff3e0; border-left: 4px solid #e17055; border-radius: 8px; padding: 14px 18px; margin-top: 16px; margin-bottom: 8px; font-size: 0.9rem; color: #2d3436; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <p id="closed-message" class="hidden" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:1.1rem;">Modal closed. <a href="vitaminwater-modal.html" style="color:#00b894;">Refresh</a> to reopen.</p>
+  <div id="product-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-product-name">Vitaminwater Power-C</h2>
+        <button id="modal-close" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="images-row">
+        <div id="image-container" class="image-container">
+          <div id="zoom-inner" class="zoom-inner">
+            <img id="modal-image" src="assets/products/vitaminwater/71EdjN9TJKL._SL1500_.jpg" alt="Product packaging" />
+          </div>
+        </div>
+        <div id="extra-images" class="extra-images"></div>
+      </div>
+      <div id="modal-splitter" class="modal-splitter hidden"></div>
+      <div id="phase-select" class="modal-body">
+        <p class="modal-instructions">Tap the areas on the packaging you think are examples of healthwashing. Hold <strong>Shift</strong> and click multiple areas to group elements that work together.</p>
+        <p class="zoom-hint">Double-click the image to zoom in. Double-click again to zoom out.</p>
+        <div id="reasoning-area" class="reasoning-area"></div>
+        <div class="modal-footer">
+          <button id="btn-submit" class="btn btn-submit">Submit</button>
+        </div>
+      </div>
+      <div id="phase-reveal" class="modal-body hidden">
+        <div class="reveal-columns">
+          <div class="reveal-col">
+            <div class="reveal-col-title user-title">Your Analysis</div>
+            <div id="reveal-user" class="reveal-col-body"></div>
+          </div>
+          <div class="reveal-col">
+            <div class="reveal-col-title our-title">Our Analysis</div>
+            <div id="reveal-ours" class="reveal-col-body"></div>
+          </div>
+        </div>
+        <div id="reveal-summary" class="reveal-summary"></div>
+        <div class="modal-footer">
+          <button id="btn-continue" class="btn btn-submit">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ─── VITAMINWATER MODAL — FROZEN SNAPSHOT — DO NOT EDIT ─── */
+    (function() {
+      const productData = {
+        id: 'vitaminwater',
+        name: 'Vitaminwater Power-C',
+        images: {
+          front: 'assets/products/vitaminwater/71EdjN9TJKL._SL1500_.jpg',
+          ingredients: 'assets/products/vitaminwater/00786162010001_577.jpeg',
+          nutrition: 'assets/products/vitaminwater/00786162010001_874.jpeg'
+        },
+        ourPicks: [3, 4, 5, 6, 7, 8],
+        explanations: {
+          3: '"Immune support" is a structure/function claim that doesn\'t require FDA pre-market approval, letting Vitaminwater highlight added vitamins without independent verification, drawing attention to select nutrients rather than the drink\'s overall nutritional content.',
+          5: '"Antioxidant vitamin C" is redundant and the use of "antioxidant" here adds perceived value without conveying meaningful extra information.',
+          6: 'The smiley face paired with "helps support normal immune function" visually reinforces a vague, unquantifiable claim, showing the product relies on positive connotations rather than scientific validation.',
+          7: 'Fancy technical terms like "reverse osmosis water" and "crystalline fructose" for simple ingredients like water and sugar add confusion and imply sophistication, further obscuring the nutritional landscape.'
+        },
+        ourGroups: [{
+          ids: [4, 5, 8],
+          explanation: 'Prominent micronutrient labeling draws away from primary nutritional content — 27g of carbs, all added sugar (54% DV) — creating a health halo where consumers see the drink as healthy despite high sugar.'
+        }],
+        citations: { 3: 'https://www.fda.gov/regulatory-information/search-fda-guidance-documents/small-entity-compliance-guide-structurefunction-claims' },
+        summary: ''
+      };
+
+      const hotspotsData = {
+        front: [
+          { id: 'dragonfruit-power-c', left: 35.1, top: 43.3, width: 12.5, height: 7.2 },
+          { id: 'vitamin-water', left: 20.2, top: 43.3, width: 15.1, height: 41.7 },
+          { id: 'immune-support', left: 59.1, top: 43.3, width: 16.5, height: 15.3 },
+          { id: 'vitamin-c', left: 59.4, top: 76.4, width: 15.6, height: 2.5 },
+          { id: 'zinc', left: 59.4, top: 78.7, width: 15.4, height: 2.2 },
+          { id: 'immune function', left: 59.6, top: 80.6, width: 16.8, height: 3.7 }
+        ],
+        ingredients: [{ id: 'ingredients', left: 1.3, top: 9.7, width: 97.2, height: 82.8 }],
+        nutrition: [{ id: 'nutrition', left: 3.9, top: 1.3, width: 90.4, height: 97 }]
+      };
+
+      const state = {
+        selectedHotspots: new Set(),
+        individualSelections: new Set(),
+        userReasons: {},
+        selectionGroups: [],
+        pendingGroup: [],
+        groupCounter: 0,
+        hotspotGroupMap: {},
+        allHotspotRefs: [],
+        inReveal: false,
+        zoomed: false,
+        panState: null,
+        imagesRowNaturalHeight: null
+      };
+
+      const modalEl = document.getElementById('product-modal');
+      const modalNameEl = document.getElementById('modal-product-name');
+      const modalCloseBtn = document.getElementById('modal-close');
+      const phaseSelect = document.getElementById('phase-select');
+      const phaseReveal = document.getElementById('phase-reveal');
+      const imageContainer = document.getElementById('image-container');
+      const imagesRow = document.querySelector('.images-row');
+      const splitter = document.getElementById('modal-splitter');
+      const modalImage = document.getElementById('modal-image');
+      const btnSubmit = document.getElementById('btn-submit');
+      const btnContinue = document.getElementById('btn-continue');
+      const revealUser = document.getElementById('reveal-user');
+      const revealOurs = document.getElementById('reveal-ours');
+      const revealSummary = document.getElementById('reveal-summary');
+      const reasoningArea = document.getElementById('reasoning-area');
+
+      function setupZoom() {
+        const inner = document.getElementById('zoom-inner');
+        imageContainer.addEventListener('dblclick', (e) => {
+          e.preventDefault();
+          if (e.target.closest('.hotspot')) return;
+          state.zoomed = !state.zoomed;
+          if (state.zoomed) {
+            const rect = imageContainer.getBoundingClientRect();
+            inner.style.transformOrigin = `${(e.clientX - rect.left) / rect.width * 100}% ${(e.clientY - rect.top) / rect.height * 100}%`;
+            inner.style.transform = 'scale(2.5)';
+            imageContainer.classList.add('zoomed');
+          } else {
+            inner.style.transform = 'scale(1)';
+            inner.style.transformOrigin = 'center center';
+            imageContainer.classList.remove('zoomed');
+          }
+        });
+        imageContainer.addEventListener('mousedown', (e) => {
+          if (!state.zoomed || e.target.closest('.hotspot')) return;
+          e.preventDefault();
+          state.panState = { startX: e.clientX, startY: e.clientY, origOrigin: inner.style.transformOrigin };
+        });
+        window.addEventListener('mousemove', (e) => {
+          if (!state.panState) return;
+          const rect = imageContainer.getBoundingClientRect();
+          const dx = (e.clientX - state.panState.startX) / rect.width * 100;
+          const dy = (e.clientY - state.panState.startY) / rect.height * 100;
+          const orig = state.panState.origOrigin.split(' ');
+          inner.style.transformOrigin = `${parseFloat(orig[0]) - dx}% ${parseFloat(orig[1]) - dy}%`;
+          state.panState.startX = e.clientX;
+          state.panState.startY = e.clientY;
+          state.panState.origOrigin = inner.style.transformOrigin;
+        });
+        window.addEventListener('mouseup', () => { state.panState = null; });
+      }
+
+      function setupExtraZoom(wrapper, inner) {
+        let zoomed = false, panState = null;
+        wrapper.addEventListener('dblclick', (e) => {
+          e.preventDefault();
+          if (e.target.closest('.hotspot')) return;
+          zoomed = !zoomed;
+          if (zoomed) {
+            const rect = wrapper.getBoundingClientRect();
+            inner.style.transformOrigin = `${(e.clientX - rect.left) / rect.width * 100}% ${(e.clientY - rect.top) / rect.height * 100}%`;
+            inner.style.transform = 'scale(2.5)';
+            wrapper.classList.add('zoomed');
+          } else {
+            inner.style.transform = 'scale(1)';
+            inner.style.transformOrigin = 'center center';
+            wrapper.classList.remove('zoomed');
+          }
+        });
+        wrapper.addEventListener('mousedown', (e) => {
+          if (!zoomed || e.target.closest('.hotspot')) return;
+          e.preventDefault();
+          panState = { startX: e.clientX, startY: e.clientY, origOrigin: inner.style.transformOrigin };
+        });
+        const onMove = (e) => {
+          if (!panState) return;
+          const rect = wrapper.getBoundingClientRect();
+          const dx = (e.clientX - panState.startX) / rect.width * 100;
+          const dy = (e.clientY - panState.startY) / rect.height * 100;
+          const orig = panState.origOrigin.split(' ');
+          inner.style.transformOrigin = `${parseFloat(orig[0]) - dx}% ${parseFloat(orig[1]) - dy}%`;
+          panState.startX = e.clientX;
+          panState.startY = e.clientY;
+          panState.origOrigin = inner.style.transformOrigin;
+        };
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', () => { panState = null; });
+      }
+
+      function buildHotspots(hotspots) {
+        const zoomInner = document.getElementById('zoom-inner');
+        zoomInner.querySelectorAll('.hotspot').forEach(el => el.remove());
+        const oldSvg = zoomInner.querySelector('.leader-overlay');
+        if (oldSvg) oldSvg.remove();
+        state.zoomed = false;
+        zoomInner.style.transform = 'scale(1)';
+        zoomInner.style.transformOrigin = 'center center';
+        imageContainer.classList.remove('zoomed');
+
+        const NS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(NS, 'svg');
+        svg.classList.add('leader-overlay');
+        svg.setAttribute('viewBox', '0 0 100 100');
+        svg.setAttribute('preserveAspectRatio', 'none');
+        const r = 1.8, lineLen = 4, placed = [];
+
+        hotspots.forEach((hs, index) => {
+          const div = document.createElement('div');
+          div.className = 'hotspot';
+          div.dataset.id = hs.id;
+          div.style.cssText = `left:${hs.left}%;top:${hs.top}%;width:${hs.width}%;height:${hs.height}%`;
+          div.addEventListener('click', (e) => { if (!state.inReveal) { e.stopPropagation(); handleHotspotClick(hs.id, index, e); } });
+          div.addEventListener('mouseenter', () => {
+            if (state.inReveal) return;
+            const ln = svg.querySelector(`.leader-line[data-index="${index}"]`);
+            const nm = svg.querySelector(`.leader-number[data-index="${index}"]`);
+            if (ln) ln.classList.add('hovered');
+            if (nm) nm.classList.add('hovered');
+          });
+          div.addEventListener('mouseleave', () => {
+            const ln = svg.querySelector(`.leader-line[data-index="${index}"]`);
+            const nm = svg.querySelector(`.leader-number[data-index="${index}"]`);
+            if (ln) ln.classList.remove('hovered');
+            if (nm) nm.classList.remove('hovered');
+          });
+          zoomInner.appendChild(div);
+          state.allHotspotRefs.push({ id: hs.id, el: div, container: zoomInner });
+
+          const cx = hs.left + hs.width / 2, cy = hs.top + hs.height / 2;
+          const candidates = [
+            { nx: hs.left - lineLen - r, ny: cy, lx: hs.left, ly: cy },
+            { nx: hs.left + hs.width + lineLen + r, ny: cy, lx: hs.left + hs.width, ly: cy },
+            { nx: cx, ny: hs.top - lineLen - r, lx: cx, ly: hs.top },
+            { nx: cx, ny: hs.top + hs.height + lineLen + r, lx: cx, ly: hs.top + hs.height }
+          ];
+          let best = null, bestScore = -Infinity;
+          for (const c of candidates) {
+            if (c.nx < 1 || c.nx > 99 || c.ny < 1 || c.ny > 99) continue;
+            let score = 0;
+            for (const other of hotspots) {
+              if (c.nx > other.left - r && c.nx < other.left + other.width + r && c.ny > other.top - r && c.ny < other.top + other.height + r) score -= 10;
+            }
+            for (const p of placed) {
+              const dist = Math.sqrt((c.nx - p.x) ** 2 + (c.ny - p.y) ** 2);
+              if (dist < 4) score -= (4 - dist) * 3;
+            }
+            if (best === null || score > bestScore) { best = c; bestScore = score; }
+          }
+          if (!best) best = candidates[0];
+          placed.push({ x: best.nx, y: best.ny });
+          const dx = best.nx - best.lx, dy = best.ny - best.ly;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const endX = dist > 0 ? best.nx - (dx / dist) * r : best.nx;
+          const endY = dist > 0 ? best.ny - (dy / dist) * r : best.ny;
+
+          const line = document.createElementNS(NS, 'line');
+          line.classList.add('leader-line');
+          line.dataset.index = index;
+          line.setAttribute('x1', best.lx);
+          line.setAttribute('y1', best.ly);
+          line.setAttribute('x2', endX);
+          line.setAttribute('y2', endY);
+          line.setAttribute('vector-effect', 'non-scaling-stroke');
+          svg.appendChild(line);
+
+          const g = document.createElementNS(NS, 'g');
+          g.classList.add('leader-number');
+          g.dataset.index = index;
+          g.dataset.id = hs.id;
+          const circle = document.createElementNS(NS, 'circle');
+          circle.setAttribute('cx', best.nx);
+          circle.setAttribute('cy', best.ny);
+          circle.setAttribute('r', r);
+          circle.setAttribute('vector-effect', 'non-scaling-stroke');
+          g.appendChild(circle);
+          const text = document.createElementNS(NS, 'text');
+          text.setAttribute('x', best.nx);
+          text.setAttribute('y', best.ny);
+          text.textContent = index + 1;
+          text.setAttribute('vector-effect', 'non-scaling-stroke');
+          g.appendChild(text);
+          g.addEventListener('click', (e) => { if (!state.inReveal) { e.stopPropagation(); handleHotspotClick(hs.id, index, e); } });
+          svg.appendChild(g);
+        });
+        zoomInner.appendChild(svg);
+      }
+
+      function buildExtraHotspots(wrapper, hotspots) {
+        const NS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(NS, 'svg');
+        svg.classList.add('leader-overlay');
+        svg.setAttribute('viewBox', '0 0 100 100');
+        svg.setAttribute('preserveAspectRatio', 'none');
+        const r = 1.8, lineLen = 4, placed = [];
+        const globalOffset = state.allHotspotRefs.length;
+
+        hotspots.forEach((h, i) => {
+          const globalIdx = globalOffset + i;
+          const div = document.createElement('div');
+          div.className = 'hotspot';
+          div.dataset.id = h.id;
+          div.dataset.globalIdx = globalIdx;
+          div.style.cssText = `left:${h.left}%;top:${h.top}%;width:${h.width}%;height:${h.height}%`;
+          div.addEventListener('click', (e) => { if (!state.inReveal) { e.stopPropagation(); handleHotspotClick(h.id, globalIdx, e); } });
+          div.addEventListener('mouseenter', () => {
+            if (state.inReveal) return;
+            const ln = svg.querySelector(`.leader-line[data-index="${globalIdx}"]`);
+            const nm = svg.querySelector(`.leader-number[data-index="${globalIdx}"]`);
+            if (ln) ln.classList.add('hovered');
+            if (nm) nm.classList.add('hovered');
+          });
+          div.addEventListener('mouseleave', () => {
+            const ln = svg.querySelector(`.leader-line[data-index="${globalIdx}"]`);
+            const nm = svg.querySelector(`.leader-number[data-index="${globalIdx}"]`);
+            if (ln) ln.classList.remove('hovered');
+            if (nm) nm.classList.remove('hovered');
+          });
+          wrapper.appendChild(div);
+          state.allHotspotRefs.push({ id: h.id, el: div, svg, container: wrapper });
+
+          const cx = h.left + h.width / 2, cy = h.top + h.height / 2;
+          const candidates = [
+            { nx: h.left - lineLen - r, ny: cy, lx: h.left, ly: cy },
+            { nx: h.left + h.width + lineLen + r, ny: cy, lx: h.left + h.width, ly: cy },
+            { nx: cx, ny: h.top - lineLen - r, lx: cx, ly: h.top },
+            { nx: cx, ny: h.top + h.height + lineLen + r, lx: cx, ly: h.top + h.height }
+          ];
+          let best = null, bestScore = -Infinity;
+          for (const c of candidates) {
+            if (c.nx < 1 || c.nx > 99 || c.ny < 1 || c.ny > 99) continue;
+            let score = 0;
+            for (const other of hotspots) {
+              if (c.nx > other.left - r && c.nx < other.left + other.width + r && c.ny > other.top - r && c.ny < other.top + other.height + r) score -= 10;
+            }
+            for (const p of placed) {
+              const dist = Math.sqrt((c.nx - p.x) ** 2 + (c.ny - p.y) ** 2);
+              if (dist < 4) score -= (4 - dist) * 3;
+            }
+            if (best === null || score > bestScore) { best = c; bestScore = score; }
+          }
+          if (!best) best = candidates[0];
+          placed.push({ x: best.nx, y: best.ny });
+          const dx = best.nx - best.lx, dy = best.ny - best.ly;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const endX = dist > 0 ? best.nx - (dx / dist) * r : best.nx;
+          const endY = dist > 0 ? best.ny - (dy / dist) * r : best.ny;
+
+          const line = document.createElementNS(NS, 'line');
+          line.classList.add('leader-line');
+          line.dataset.index = globalIdx;
+          line.setAttribute('x1', best.lx);
+          line.setAttribute('y1', best.ly);
+          line.setAttribute('x2', endX);
+          line.setAttribute('y2', endY);
+          line.setAttribute('vector-effect', 'non-scaling-stroke');
+          svg.appendChild(line);
+
+          const g = document.createElementNS(NS, 'g');
+          g.classList.add('leader-number');
+          g.dataset.index = globalIdx;
+          g.dataset.id = h.id;
+          const circle = document.createElementNS(NS, 'circle');
+          circle.setAttribute('cx', best.nx);
+          circle.setAttribute('cy', best.ny);
+          circle.setAttribute('r', r);
+          circle.setAttribute('vector-effect', 'non-scaling-stroke');
+          g.appendChild(circle);
+          const text = document.createElementNS(NS, 'text');
+          text.setAttribute('x', best.nx);
+          text.setAttribute('y', best.ny);
+          text.textContent = globalIdx + 1;
+          text.setAttribute('vector-effect', 'non-scaling-stroke');
+          g.appendChild(text);
+          g.addEventListener('click', (e) => { if (!state.inReveal) { e.stopPropagation(); handleHotspotClick(h.id, globalIdx, e); } });
+          svg.appendChild(g);
+        });
+        wrapper.appendChild(svg);
+      }
+
+      function buildExtraImages(images, hs) {
+        const container = document.getElementById('extra-images');
+        container.innerHTML = '';
+        const pairs = [
+          { src: images.ingredients, hotspots: hs.ingredients || [] },
+          { src: images.nutrition, hotspots: hs.nutrition || [] }
+        ];
+        pairs.forEach(({ src, hotspots }) => {
+          if (!src) return;
+          const wrapper = document.createElement('div');
+          wrapper.className = 'extra-img-wrapper';
+          const inner = document.createElement('div');
+          inner.className = 'extra-zoom-inner';
+          const img = document.createElement('img');
+          img.src = src;
+          img.alt = 'Product info';
+          inner.appendChild(img);
+          wrapper.appendChild(inner);
+          if (hotspots.length) buildExtraHotspots(inner, hotspots);
+          setupExtraZoom(wrapper, inner);
+          container.appendChild(wrapper);
+        });
+      }
+
+      function handleHotspotClick(id, globalIdx, event) {
+        if (event.shiftKey) {
+          handleGroupClick(id, globalIdx);
+        } else {
+          finalizePendingGroup();
+          handleIndividualClick(id, globalIdx);
+        }
+      }
+
+      function handleGroupClick(id, globalIdx) {
+        const pendingIdx = state.pendingGroup.indexOf(id);
+        if (pendingIdx >= 0) {
+          state.pendingGroup.splice(pendingIdx, 1);
+          if (!state.individualSelections.has(id)) state.selectedHotspots.delete(id);
+          updateHotspotVisual(id, globalIdx);
+          return;
+        }
+        if (state.hotspotGroupMap[id]) removeFromGroup(id);
+        state.pendingGroup.push(id);
+        state.selectedHotspots.add(id);
+        updateHotspotVisual(id, globalIdx);
+      }
+
+      function handleIndividualClick(id, globalIdx) {
+        const isIndividual = state.individualSelections.has(id);
+        if (isIndividual) {
+          state.individualSelections.delete(id);
+          removeReasoningInput(id);
+          if (!state.hotspotGroupMap[id] && !state.pendingGroup.includes(id)) state.selectedHotspots.delete(id);
+        } else {
+          state.individualSelections.add(id);
+          state.selectedHotspots.add(id);
+          addReasoningInput(id, globalIdx);
+        }
+        updateHotspotVisual(id, globalIdx);
+      }
+
+      function finalizePendingGroup() {
+        if (state.pendingGroup.length === 0) return;
+        const pending = [...state.pendingGroup];
+        state.pendingGroup = [];
+        if (pending.length === 1) {
+          const id = pending[0];
+          const gi = state.allHotspotRefs.findIndex(r => r.id === id);
+          if (!state.individualSelections.has(id)) {
+            state.individualSelections.add(id);
+            addReasoningInput(id, gi);
+          }
+          updateHotspotVisual(id, gi);
+        } else {
+          const groupKey = `group-${state.groupCounter++}`;
+          const group = { ids: [...pending], key: groupKey };
+          state.selectionGroups.push(group);
+          for (const gid of group.ids) {
+            state.hotspotGroupMap[gid] = groupKey;
+            const gi = state.allHotspotRefs.findIndex(r => r.id === gid);
+            updateHotspotVisual(gid, gi);
+          }
+          addGroupReasoningInput(group);
+        }
+      }
+
+      function updateHotspotVisual(id, globalIdx) {
+        const ref = state.allHotspotRefs[globalIdx];
+        if (!ref) return;
+        const isIndividual = state.individualSelections.has(id);
+        const isGrouped = !!state.hotspotGroupMap[id];
+        const isPending = state.pendingGroup.includes(id);
+        ref.el.classList.remove('selected', 'grouping', 'grouped');
+        if (isPending) ref.el.classList.add('grouping');
+        if (isGrouped) ref.el.classList.add('grouped');
+        if (isIndividual) ref.el.classList.add('selected');
+        const svg = ref.container.querySelector('.leader-overlay');
+        if (!svg) return;
+        const line = svg.querySelector(`.leader-line[data-index="${globalIdx}"]`);
+        const numG = svg.querySelector(`.leader-number[data-index="${globalIdx}"]`);
+        for (const el of [line, numG]) {
+          if (!el) continue;
+          el.classList.remove('selected', 'grouping', 'grouped');
+          if (isPending) el.classList.add('grouping');
+          if (isGrouped) el.classList.add('grouped');
+          if (isIndividual) el.classList.add('selected');
+        }
+      }
+
+      function removeFromGroup(id) {
+        const groupKey = state.hotspotGroupMap[id];
+        if (!groupKey) return;
+        const groupIdx = state.selectionGroups.findIndex(g => g.key === groupKey);
+        if (groupIdx < 0) return;
+        const group = state.selectionGroups[groupIdx];
+        group.ids = group.ids.filter(gid => gid !== id);
+        delete state.hotspotGroupMap[id];
+        if (!state.individualSelections.has(id)) state.selectedHotspots.delete(id);
+        const savedReason = state.userReasons[groupKey];
+        removeReasoningInput(groupKey);
+        if (group.ids.length <= 1) {
+          if (group.ids.length === 1) {
+            const remainId = group.ids[0];
+            delete state.hotspotGroupMap[remainId];
+            const ri = state.allHotspotRefs.findIndex(r => r.id === remainId);
+            if (!state.individualSelections.has(remainId)) {
+              state.individualSelections.add(remainId);
+              state.selectedHotspots.add(remainId);
+              addReasoningInput(remainId, ri);
+            }
+            updateHotspotVisual(remainId, ri);
+          }
+          state.selectionGroups.splice(groupIdx, 1);
+        } else {
+          state.userReasons[groupKey] = savedReason;
+          addGroupReasoningInput(group);
+        }
+        const gi = state.allHotspotRefs.findIndex(r => r.id === id);
+        updateHotspotVisual(id, gi);
+      }
+
+      function addGroupReasoningInput(group) {
+        const entry = document.createElement('div');
+        entry.className = 'reasoning-entry group-entry';
+        entry.dataset.id = group.key;
+        const nums = group.ids.map(gid => state.allHotspotRefs.findIndex(r => r.id === gid) + 1).sort((a,b)=>a-b);
+        const minIdx = Math.min(...nums) - 1;
+        entry.dataset.order = minIdx;
+        const label = document.createElement('span');
+        label.className = 'reason-label group-label';
+        label.textContent = nums.join('+');
+        const textarea = document.createElement('textarea');
+        textarea.placeholder = 'How do these elements work together to mislead?';
+        textarea.rows = 2;
+        textarea.value = state.userReasons[group.key] || '';
+        textarea.addEventListener('input', () => { state.userReasons[group.key] = textarea.value; });
+        entry.appendChild(label);
+        entry.appendChild(textarea);
+        const existing = reasoningArea.querySelectorAll('.reasoning-entry');
+        let inserted = false;
+        for (const el of existing) {
+          if (Number(el.dataset.order) > minIdx) {
+            reasoningArea.insertBefore(entry, el);
+            inserted = true;
+            break;
+          }
+        }
+        if (!inserted) reasoningArea.appendChild(entry);
+      }
+
+      function addReasoningInput(id, index) {
+        const entry = document.createElement('div');
+        entry.className = 'reasoning-entry';
+        entry.dataset.id = id;
+        entry.dataset.order = index;
+        const label = document.createElement('span');
+        label.className = 'reason-label';
+        label.textContent = index + 1;
+        const textarea = document.createElement('textarea');
+        textarea.placeholder = 'Why do you think this is healthwashing?';
+        textarea.rows = 1;
+        textarea.value = state.userReasons[id] || '';
+        textarea.addEventListener('input', () => { state.userReasons[id] = textarea.value; });
+        entry.appendChild(label);
+        entry.appendChild(textarea);
+        const existing = reasoningArea.querySelectorAll('.reasoning-entry');
+        let inserted = false;
+        for (const el of existing) {
+          if (Number(el.dataset.order) > index) {
+            reasoningArea.insertBefore(entry, el);
+            inserted = true;
+            break;
+          }
+        }
+        if (!inserted) reasoningArea.appendChild(entry);
+      }
+
+      function removeReasoningInput(id) {
+        const entry = reasoningArea.querySelector(`.reasoning-entry[data-id="${id}"]`);
+        if (entry) entry.remove();
+        delete state.userReasons[id];
+      }
+
+      function submitSelections() {
+        finalizePendingGroup();
+        state.inReveal = true;
+        imageContainer.classList.add('in-reveal');
+        document.querySelectorAll('.extra-img-wrapper').forEach(w => w.classList.add('in-reveal'));
+        buildRevealUser();
+        buildRevealOurs();
+        if (productData.summary) {
+          revealSummary.innerHTML = productData.summary;
+          revealSummary.style.display = '';
+        } else {
+          revealSummary.style.display = 'none';
+        }
+        phaseSelect.classList.add('hidden');
+        phaseReveal.classList.remove('hidden');
+        setTimeout(() => {
+          const body = phaseReveal;
+          const hasOverflow = body && body.scrollHeight > body.clientHeight;
+          if (splitter) splitter.classList.toggle('hidden', !hasOverflow);
+        }, 50);
+      }
+
+      function buildRevealUser() {
+        revealUser.innerHTML = '';
+        const entries = [];
+        for (const id of state.individualSelections) {
+          const globalIdx = state.allHotspotRefs.findIndex(r => r.id === id);
+          const num = globalIdx + 1;
+          const reason = state.userReasons[id] || '';
+          entries.push({ nums: [num], reason, sortKey: num });
+        }
+        for (const group of state.selectionGroups) {
+          const nums = group.ids.map(gid => state.allHotspotRefs.findIndex(r => r.id === gid) + 1).sort((a,b)=>a-b);
+          entries.push({ nums, reason: state.userReasons[group.key] || '', sortKey: Math.min(...nums), isGroup: true });
+        }
+        entries.sort((a, b) => a.sortKey - b.sortKey);
+        if (entries.length === 0) {
+          revealUser.innerHTML = '<p class="reveal-empty">You didn\'t select any areas — no worries, take a look at what we found.</p>';
+          return;
+        }
+        entries.forEach(entry => {
+          const el = document.createElement('div');
+          el.className = 'reveal-entry';
+          el.dataset.nums = entry.nums.join(',');
+          const label = document.createElement('span');
+          label.className = 'reveal-entry-label' + (entry.isGroup ? ' group' : '');
+          label.textContent = entry.nums.join('+');
+          const text = document.createElement('div');
+          text.className = 'reveal-entry-text';
+          text.innerHTML = entry.reason ? `<p>${entry.reason}</p>` : '<p class="no-reason">No reasoning provided</p>';
+          el.appendChild(label);
+          el.appendChild(text);
+          el.addEventListener('mouseenter', () => highlightRevealHotspots(entry.nums, true));
+          el.addEventListener('mouseleave', () => highlightRevealHotspots(entry.nums, false));
+          revealUser.appendChild(el);
+        });
+      }
+
+      function buildRevealOurs() {
+        revealOurs.innerHTML = '';
+        const entries = [];
+        const individualPicks = new Set(productData.ourPicks || []);
+        const ourGroups = productData.ourGroups || [];
+        for (const num of individualPicks) {
+          const explanation = productData.explanations?.[num] || '';
+          if (!explanation) continue;
+          entries.push({ nums: [num], explanation, citation: productData.citations?.[num] || '', sortKey: num });
+        }
+        for (const group of ourGroups) {
+          entries.push({ nums: [...group.ids].sort((a,b)=>a-b), explanation: group.explanation, sortKey: Math.min(...group.ids), isGroup: true });
+        }
+        entries.sort((a, b) => a.sortKey - b.sortKey);
+        if (entries.length === 0) {
+          revealOurs.innerHTML = '<p class="reveal-empty">No annotations for this product yet.</p>';
+          return;
+        }
+        entries.forEach(entry => {
+          const el = document.createElement('div');
+          el.className = 'reveal-entry';
+          el.dataset.nums = entry.nums.join(',');
+          const label = document.createElement('span');
+          label.className = 'reveal-entry-label' + (entry.isGroup ? ' group' : '');
+          label.textContent = entry.nums.join('+');
+          const text = document.createElement('div');
+          text.className = 'reveal-entry-text';
+          let html = `<p>${entry.explanation}</p>`;
+          if (entry.citation) html += `<a class="reveal-citation" href="${entry.citation}" target="_blank" rel="noopener">View source ↗</a>`;
+          text.innerHTML = html;
+          el.appendChild(label);
+          el.appendChild(text);
+          el.addEventListener('mouseenter', () => highlightRevealHotspots(entry.nums, true));
+          el.addEventListener('mouseleave', () => highlightRevealHotspots(entry.nums, false));
+          revealOurs.appendChild(el);
+        });
+      }
+
+      function highlightRevealHotspots(nums, on) {
+        nums.forEach(n => {
+          const idx = n - 1;
+          const ref = state.allHotspotRefs[idx];
+          if (!ref) return;
+          ref.el.classList.toggle('hovered', on);
+          const svg = ref.container.querySelector('.leader-overlay');
+          if (svg) {
+            const line = svg.querySelector(`.leader-line[data-index="${idx}"]`);
+            const numG = svg.querySelector(`.leader-number[data-index="${idx}"]`);
+            if (line) line.classList.toggle('hovered', on);
+            if (numG) numG.classList.toggle('hovered', on);
+          }
+        });
+      }
+
+      function closeModal() {
+        modalEl.classList.add('hidden');
+        const msg = document.getElementById('closed-message');
+        if (msg) msg.classList.remove('hidden');
+      }
+
+      modalNameEl.textContent = productData.name;
+      state.allHotspotRefs = [];
+      modalImage.src = productData.images.front;
+      buildHotspots(hotspotsData.front);
+      buildExtraImages(productData.images, hotspotsData);
+      imagesRow.style.height = '';
+      setupZoom();
+
+      modalCloseBtn.addEventListener('click', closeModal);
+      btnSubmit.addEventListener('click', submitSelections);
+      btnContinue.addEventListener('click', closeModal);
+
+      window.addEventListener('keyup', (e) => {
+        if (e.key === 'Shift') finalizePendingGroup();
+      });
+
+      setTimeout(() => {
+        if (imagesRow) state.imagesRowNaturalHeight = imagesRow.getBoundingClientRect().height;
+      }, 50);
+    })();
+  </script>
+</body>
+</html>

@@ -47,19 +47,19 @@
     "ingredients": [
       {
         "id": "ingredients",
-        "left": 3,
-        "top": 43.3,
-        "width": 93.6,
-        "height": 15.2
+        "left": 1.3,
+        "top": 9.7,
+        "width": 97.2,
+        "height": 82.8
       }
     ],
     "nutrition": [
       {
         "id": "nutrition",
-        "left": 24.8,
-        "top": 1.5,
-        "width": 50.6,
-        "height": 96.8
+        "left": 3.9,
+        "top": 1.3,
+        "width": 90.4,
+        "height": 97
       }
     ]
   },
