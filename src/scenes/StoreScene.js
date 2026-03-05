@@ -143,6 +143,11 @@ export class StoreScene extends Phaser.Scene {
     this.zoomed = false;
     this.panState = null;
 
+    const applyZoom = (origin, transform) => {
+      inner.style.transformOrigin = origin;
+      inner.style.transform = transform;
+    };
+
     container.addEventListener('dblclick', (e) => {
       e.preventDefault();
       if (e.target.closest('.hotspot')) return;
@@ -153,13 +158,11 @@ export class StoreScene extends Phaser.Scene {
         const rect = container.getBoundingClientRect();
         const clickX = (e.clientX - rect.left) / rect.width;
         const clickY = (e.clientY - rect.top) / rect.height;
-
-        inner.style.transformOrigin = `${clickX * 100}% ${clickY * 100}%`;
-        inner.style.transform = 'scale(2.5)';
+        const origin = `${clickX * 100}% ${clickY * 100}%`;
+        applyZoom(origin, 'scale(2.5)');
         container.classList.add('zoomed');
       } else {
-        inner.style.transform = 'scale(1)';
-        inner.style.transformOrigin = 'center center';
+        applyZoom('center center', 'scale(1)');
         container.classList.remove('zoomed');
       }
     });
@@ -180,11 +183,11 @@ export class StoreScene extends Phaser.Scene {
       const orig = this.panState.origOrigin.split(' ');
       const ox = parseFloat(orig[0]) - dx;
       const oy = parseFloat(orig[1]) - dy;
-
-      inner.style.transformOrigin = `${ox}% ${oy}%`;
+      const newOrigin = `${ox}% ${oy}%`;
+      applyZoom(newOrigin, inner.style.transform);
       this.panState.startX = e.clientX;
       this.panState.startY = e.clientY;
-      this.panState.origOrigin = inner.style.transformOrigin;
+      this.panState.origOrigin = newOrigin;
     });
 
     window.addEventListener('mouseup', () => {
@@ -310,7 +313,7 @@ export class StoreScene extends Phaser.Scene {
       wrapper.appendChild(inner);
 
       if (hotspots.length) {
-        this.buildExtraHotspots(inner, hotspots);
+        this.buildExtraHotspots(wrapper, inner, hotspots);
       }
 
       this.setupExtraZoom(wrapper, inner);
@@ -322,6 +325,11 @@ export class StoreScene extends Phaser.Scene {
     let zoomed = false;
     let panState = null;
 
+    const applyZoom = (origin, transform) => {
+      inner.style.transformOrigin = origin;
+      inner.style.transform = transform;
+    };
+
     wrapper.addEventListener('dblclick', (e) => {
       e.preventDefault();
       if (e.target.closest('.hotspot')) return;
@@ -331,12 +339,11 @@ export class StoreScene extends Phaser.Scene {
         const rect = wrapper.getBoundingClientRect();
         const clickX = (e.clientX - rect.left) / rect.width;
         const clickY = (e.clientY - rect.top) / rect.height;
-        inner.style.transformOrigin = `${clickX * 100}% ${clickY * 100}%`;
-        inner.style.transform = 'scale(2.5)';
+        const origin = `${clickX * 100}% ${clickY * 100}%`;
+        applyZoom(origin, 'scale(2.5)');
         wrapper.classList.add('zoomed');
       } else {
-        inner.style.transform = 'scale(1)';
-        inner.style.transformOrigin = 'center center';
+        applyZoom('center center', 'scale(1)');
         wrapper.classList.remove('zoomed');
       }
     });
@@ -356,10 +363,11 @@ export class StoreScene extends Phaser.Scene {
       const orig = panState.origOrigin.split(' ');
       const ox = parseFloat(orig[0]) - dx;
       const oy = parseFloat(orig[1]) - dy;
-      inner.style.transformOrigin = `${ox}% ${oy}%`;
+      const newOrigin = `${ox}% ${oy}%`;
+      applyZoom(newOrigin, inner.style.transform);
       panState.startX = e.clientX;
       panState.startY = e.clientY;
-      panState.origOrigin = inner.style.transformOrigin;
+      panState.origOrigin = newOrigin;
     };
 
     const onUp = () => { panState = null; };
@@ -368,7 +376,7 @@ export class StoreScene extends Phaser.Scene {
     window.addEventListener('mouseup', onUp);
   }
 
-  buildExtraHotspots(wrapper, hotspots) {
+  buildExtraHotspots(wrapper, inner, hotspots) {
     const NS = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(NS, 'svg');
     svg.classList.add('leader-overlay');
@@ -379,6 +387,7 @@ export class StoreScene extends Phaser.Scene {
     const lineLen = 4;
     const placed = [];
     const globalOffset = this.allHotspotRefs.length;
+    const leaderData = [];
 
     hotspots.forEach((h, i) => {
       const globalIdx = globalOffset + i;
@@ -413,8 +422,8 @@ export class StoreScene extends Phaser.Scene {
         if (nm) nm.classList.remove('hovered');
       });
 
-      wrapper.appendChild(div);
-      this.allHotspotRefs.push({ id: h.id, el: div, svg, container: wrapper });
+      inner.appendChild(div);
+      this.allHotspotRefs.push({ id: h.id, el: div, container: wrapper });
 
       const cx = h.left + h.width / 2;
       const cy = h.top + h.height / 2;
@@ -457,6 +466,8 @@ export class StoreScene extends Phaser.Scene {
       const endX = dist > 0 ? best.nx - (dx / dist) * r : best.nx;
       const endY = dist > 0 ? best.ny - (dy / dist) * r : best.ny;
 
+      leaderData.push({ globalIdx, lx: best.lx, ly: best.ly, nx: best.nx, ny: best.ny, endX, endY });
+
       const line = document.createElementNS(NS, 'line');
       line.classList.add('leader-line');
       line.dataset.index = globalIdx;
@@ -495,13 +506,13 @@ export class StoreScene extends Phaser.Scene {
       svg.appendChild(g);
     });
 
-    wrapper.appendChild(svg);
+    inner.appendChild(svg);
   }
 
   buildHotspots(hotspots) {
     const zoomInner = document.getElementById('zoom-inner');
     zoomInner.querySelectorAll('.hotspot').forEach(el => el.remove());
-    const oldSvg = zoomInner.querySelector('.leader-overlay');
+    const oldSvg = this.imageContainer.querySelector('.leader-overlay') || zoomInner.querySelector('.leader-overlay');
     if (oldSvg) oldSvg.remove();
 
     this.zoomed = false;
@@ -518,6 +529,7 @@ export class StoreScene extends Phaser.Scene {
     const r = 1.8;
     const lineLen = 4;
     const placed = [];
+    const mainLeaderData = [];
 
     hotspots.forEach((hs, index) => {
       const div = document.createElement('div');
@@ -551,7 +563,7 @@ export class StoreScene extends Phaser.Scene {
       });
 
       zoomInner.appendChild(div);
-      this.allHotspotRefs.push({ id: hs.id, el: div, container: zoomInner });
+      this.allHotspotRefs.push({ id: hs.id, el: div, container: this.imageContainer });
 
       const cx = hs.left + hs.width / 2;
       const cy = hs.top + hs.height / 2;
@@ -600,6 +612,8 @@ export class StoreScene extends Phaser.Scene {
       const dist = Math.sqrt(dx * dx + dy * dy);
       const endX = dist > 0 ? best.nx - (dx / dist) * r : best.nx;
       const endY = dist > 0 ? best.ny - (dy / dist) * r : best.ny;
+
+      mainLeaderData.push({ globalIdx: index, lx: best.lx, ly: best.ly, nx: best.nx, ny: best.ny, endX, endY });
 
       const line = document.createElementNS(NS, 'line');
       line.classList.add('leader-line');

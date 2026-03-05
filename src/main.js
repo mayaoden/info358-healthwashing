@@ -1,3 +1,4 @@
+import { IntroScene } from './scenes/IntroScene.js';
 import { StoreScene } from './scenes/StoreScene.js';
 
 const config = {
@@ -13,7 +14,7 @@ const config = {
       debug: false
     }
   },
-  scene: [StoreScene]
+  scene: [IntroScene, StoreScene]
 };
 
 const game = new Phaser.Game(config);
